@@ -162,8 +162,8 @@ describe('Checkit - sync', function() {
         describe('boolean', function() {
             it('should pass for true and false', function() {
                 return Checkit({
-                    booleanTrue: ['boolean'],
-                    booleanFalse: ['boolean'],
+                    isBooleanFalse: ['boolean'],
+                    isBooleanTrue: ['boolean'],
                 }).run(testBlock);
             });
 

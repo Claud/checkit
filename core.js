@@ -1,4 +1,4 @@
-//     Checkit.js 0.8.0
+//     Checkit.js
 //     http://tgriesser.com/checkit
 //     (c) 2013-2015 Tim Griesser
 //     Checkit may be freely distributed under the MIT license.
@@ -20,7 +20,7 @@ module.exports = function(_, Promise) {
         this.validations = prepValidations(validations || {});
     }
 
-    Checkit.VERSION = '0.8.0';
+    Checkit.VERSION = '0.10.3';
 
     // Possibly run a validations on this object, depending on the
     // result of the `conditional` handler.
