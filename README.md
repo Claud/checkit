@@ -10,7 +10,7 @@ It allows you to seamlessly validate full javascript objects, defining custom me
 var mainRules = Checkit(rules);
 
 mainRules
-  .run(obj)
+  .run(obj, context)
   .then(function(validatedFields) {
     console.log('The fields: ' + _.keys(validatedFields).join(', ') + ' were validated!');
   })
