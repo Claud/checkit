@@ -1,6 +1,6 @@
 {
     "name": "@claud/checkit",
-    "version": "0.8.0",
+    "version": "0.10.2",
     "description": "Simple validations for node and the browser.",
     "main": "index.js",
     "scripts": {

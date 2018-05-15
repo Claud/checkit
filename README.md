@@ -376,12 +376,15 @@ You may also specify an object in one of the validator slots, specifying at the 
 ```js
 {
   email: {
+    scenarios: 'create',  
     rule: 'email',
     label: 'Email'
   },
   first_name: [{
+    scenarios: ['create', 'delete'],  
     rule: 'required',
-    message: 'You must supply a first name value!!'
+    message: 'You must supply a first name value!!',
+    when: 1 + 1 > 2
   }, {
     rule: 'minLength:3',
     label: 'first name of this application'
