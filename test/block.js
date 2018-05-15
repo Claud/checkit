@@ -69,6 +69,7 @@ global.testBlock = (function() {
 
         url1: 'http://google.com',
         url2: 'https://google.com',
+        urlREDOS: genREDOSTest_url(),
 
         uuidv1: uuid.v1(),
         uuidv4: uuid.v4(),
@@ -82,3 +83,20 @@ bmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNh
         // , isUndefined :
     };
 })();
+
+/* The URL regex is vulnerable to REDOS. */
+function genREDOSTest_url() {
+    const prefix = 'http://a';
+    const pump = 'a';
+    const suffix = '\t';
+
+    const nPumps = 50000;
+
+    let url = prefix;
+    for (let i = 0; i < nPumps; i++) {
+        url += pump;
+    }
+    url += suffix;
+
+    return url;
+}

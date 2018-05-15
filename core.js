@@ -135,8 +135,11 @@ module.exports = function(_, Promise) {
         let pendingConditionals = _.map(this.conditional, function(conditional) {
             return Promise.resolve(checkConditional(runner, conditional))
                 .then(function(result) {
-                    if (result !== true) return;
+                    if (result !== true) {
+                        return false;
+                    }
                     addVerifiedConditional(validationHash, conditional);
+                    return true;
                 })
                 .catch(function() {});
         });
@@ -146,18 +149,23 @@ module.exports = function(_, Promise) {
                 let pending = [];
                 _.each(validationHash, function(validations, key) {
                     _.each(validations, function(validation) {
-                        if (!_.isArray(validation.scenarios)) {
-                            validation.scenario = [validation.scenarios || 'default'];
+                        if (validation.scenarios && !_.isArray(validation.scenarios)) {
+                            validation.scenarios = [String(validation.scenarios)];
                         }
-                        if (!_.includes(validation.scenarios, runner.scenario)) {
+                        if (_.isArray(validation.scenarios) && !_.includes(validation.scenarios, runner.scenario)) {
                             return void 0;
                         }
-                        if (_.isFunction(validation.when) && !validation.when(runner, target)) {
+                        if (_.isFunction(validation.when)) {
+                            if (!validation.when(runner, target, runner.context)) {
+                                return void 0;
+                            }
+                        } else if (_.isBoolean(validation.when) && !validation.when) {
                             return void 0;
                         }
                         pending.push(
                             processItemAsync(runner, validation, key, context).catch(addError(errors, key, validation))
                         );
+                        return void 0;
                     });
                 });
                 return Promise.all(pending);
@@ -187,14 +195,18 @@ module.exports = function(_, Promise) {
     function checkConditional(runner, conditional) {
         try {
             return conditional[1].call(runner, runner.target, runner.context);
-        } catch (e) {}
+        } catch (e) {
+            // eslint-disable-next-line
+            console.error(e);
+            return void 0;
+        }
     }
 
     // Get value corresponding to key containing "." from nested object.
     // If key containing "." is proper in object (e.g. {"foo.bar": 100}) return 100.
     function getVal(target, key) {
-        let value = _.clone(target),
-            keys;
+        let value = _.clone(target);
+        let keys;
         if (value[key]) return value[key];
         if ((keys = key.split('.')).length === 0) return undefined;
         while (keys.length > 0) {
@@ -211,7 +223,9 @@ module.exports = function(_, Promise) {
         // If the rule isn't an existence / required check, return
         // true if the value doesn't exist.
         if (rule !== 'accepted' && rule !== 'exists' && rule !== 'required') {
-            if (value === '' || value == null) return;
+            if (value === '' || (value === null && value === void 0)) {
+                return void 0;
+            }
         }
         let result = runRule(runner.validator, runner, rule, params);
         if (_.isBoolean(result) && result === false) {
@@ -259,8 +273,8 @@ module.exports = function(_, Promise) {
         return result;
     }
 
-    function SyncRunner() {
-        Runner.apply(this, arguments);
+    function SyncRunner(...args) {
+        Runner.apply(this, args);
     }
     inherits(SyncRunner, Runner);
 
@@ -347,7 +361,7 @@ module.exports = function(_, Promise) {
 
         // Field is required and not empty (zero does not count as empty).
         required: function(val) {
-            return val != null && val !== '' ? true : false;
+            return val !== null && val !== void 0 && val !== '';
         },
 
         // Matches another named field in the current validation object.
@@ -409,7 +423,7 @@ module.exports = function(_, Promise) {
     }
 
     // Standard regular expression validators.
-    var Regex = (Checkit.Regex = {
+    const Regex = (Checkit.Regex = {
         alpha: /^[a-z]+$/i,
         alphaDash: /^[a-z0-9_\-]+$/i,
         alphaNumeric: /^[a-z0-9]+$/i,
@@ -422,7 +436,20 @@ module.exports = function(_, Promise) {
         luhn: /^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\d{3})\d{11})$/,
         natural: /^[0-9]+$/i,
         naturalNonZero: /^[1-9][0-9]*$/i,
-        url: /^((http|https):\/\/(\w+:{0,1}\w*@)?(\S+)|)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?$/,
+        url: {
+            test: function(str) {
+                // The url regex is vulnerable to catastrophic backtracking: O(n^2).
+                // It blows up around 50K+ chars, so enforce a much lower limit.
+                // 2K is about the de facto limit in web browsers.
+                // https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers
+                const MAX_URL_LEN = 5000;
+                if (MAX_URL_LEN < str.length) {
+                    return false;
+                }
+                const urlRE = /^((http|https):\/\/(\w+:?\w*@)?(\S+)|)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?$/;
+                return urlRE.test(str);
+            },
+        },
         uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     });
 
