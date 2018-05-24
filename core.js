@@ -20,7 +20,7 @@ module.exports = function(_, Promise) {
         this.validations = prepValidations(validations || {});
     }
 
-    Checkit.VERSION = '0.10.3';
+    Checkit.VERSION = '0.10.5';
 
     // Possibly run a validations on this object, depending on the
     // result of the `conditional` handler.
@@ -223,7 +223,7 @@ module.exports = function(_, Promise) {
         // If the rule isn't an existence / required check, return
         // true if the value doesn't exist.
         if (rule !== 'accepted' && rule !== 'exists' && rule !== 'required') {
-            if (value === '' || (value === null && value === void 0)) {
+            if (value === '' || (value === null || value === void 0)) {
                 return void 0;
             }
         }
